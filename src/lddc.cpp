@@ -283,8 +283,10 @@ void Lddc::InitPointcloud2Msg(const StoragePacket& pkg, PointCloud2& cloud, uint
   if (!pkg.points.empty()) {
     timestamp = pkg.base_time;
   }
-  
-  cloud.header.stamp = ros::Time( timestamp / 1000000000.0);
+  // cloud.header.stamp = ros::Time(timestamp / 1e9);
+  /**************** Modified for R2LIVE **********************/
+  cloud.header.stamp = ros::Time((timestamp - init_lidar_tim)/1e9 + init_ros_time);
+  /**************** Modified for R2LIVE **********************/
 
   std::vector<LivoxPointXyzrtlt> points;
   for (size_t i = 0; i < pkg.points_num; ++i) {
@@ -323,8 +325,10 @@ void Lddc::InitCustomMsg(CustomMsg& livox_msg, const StoragePacket& pkg, uint8_t
   }
   livox_msg.timebase = timestamp;
 
-  // livox_msg.header.stamp = ros::Time(timestamp / 1000000000.0);
+  livox_msg.header.stamp = ros::Time(timestamp / 1000000000.0);
+  /**************** Modified for R2LIVE **********************/
   livox_msg.header.stamp = ros::Time((timestamp - init_lidar_tim)/1e9 + init_ros_time);
+  /**************** Modified for R2LIVE **********************/
 
   livox_msg.point_num = pkg.points_num;
   if (lds_->lidars_[index].lidar_type == kLivoxLidarType) {
@@ -430,10 +434,11 @@ void Lddc::PublishImuData(LidarImuDataQueue& imu_data_queue, const uint8_t index
 
   ImuMsg imu_msg;
   uint64_t timestamp;
-  InitImuMsg(imu_data, imu_msg, timestamp);
+  
 
   PublisherPtr publisher_ptr = GetCurrentImuPublisher(index);
   /**************** Modified for R2LIVE **********************/
+  timestamp = imu_data.time_stamp;
   if (skip_frame)
   {
     skip_frame--;
@@ -446,7 +451,13 @@ void Lddc::PublishImuData(LidarImuDataQueue& imu_data_queue, const uint8_t index
   }
 
   imu_msg.header.stamp = ros::Time((timestamp - init_lidar_tim)/1e9 + init_ros_time);
+  double g_val = 9.805;
+  imu_data.acc_x *= g_val;
+  imu_data.acc_y *= g_val;
+  imu_data.acc_z *= g_val;
   /**************** Modified for R2LIVE **********************/
+
+  InitImuMsg(imu_data, imu_msg, timestamp);
 
   if (kOutputToRos == output_type_) {
     publisher_ptr->publish(imu_msg);
