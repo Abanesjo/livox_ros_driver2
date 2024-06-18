@@ -325,7 +325,7 @@ void Lddc::InitCustomMsg(CustomMsg& livox_msg, const StoragePacket& pkg, uint8_t
   }
   livox_msg.timebase = timestamp;
 
-  livox_msg.header.stamp = ros::Time(timestamp / 1000000000.0);
+  // livox_msg.header.stamp = ros::Time(timestamp / 1000000000.0);
   /**************** Modified for R2LIVE **********************/
   livox_msg.header.stamp = ros::Time((timestamp - init_lidar_tim)/1e9 + init_ros_time);
   /**************** Modified for R2LIVE **********************/
@@ -449,15 +449,16 @@ void Lddc::PublishImuData(LidarImuDataQueue& imu_data_queue, const uint8_t index
     ROS_INFO("Init time stamp = %lf", g_ros_init_start_time);
     ROS_INFO("========================");
   }
-
-  imu_msg.header.stamp = ros::Time((timestamp - init_lidar_tim)/1e9 + init_ros_time);
+  
   double g_val = 9.805;
   imu_data.acc_x *= g_val;
   imu_data.acc_y *= g_val;
   imu_data.acc_z *= g_val;
-  /**************** Modified for R2LIVE **********************/
 
   InitImuMsg(imu_data, imu_msg, timestamp);
+  imu_msg.header.stamp = ros::Time((timestamp - init_lidar_tim)/1e9 + init_ros_time);
+  
+    /**************** Modified for R2LIVE **********************/
 
   if (kOutputToRos == output_type_) {
     publisher_ptr->publish(imu_msg);
