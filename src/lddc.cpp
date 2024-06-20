@@ -451,12 +451,14 @@ void Lddc::PublishImuData(LidarImuDataQueue& imu_data_queue, const uint8_t index
   }
   
   double g_val = 9.805;
+
+  imu_data.time_stamp = (timestamp - init_lidar_tim)/1e9 + init_ros_time;
   imu_data.acc_x *= g_val;
   imu_data.acc_y *= g_val;
   imu_data.acc_z *= g_val;
 
   InitImuMsg(imu_data, imu_msg, timestamp);
-  imu_msg.header.stamp = ros::Time((timestamp - init_lidar_tim)/1e9 + init_ros_time);
+  // imu_msg.header.stamp = ros::Time((timestamp - init_lidar_tim)/1e9 + init_ros_time);
   
     /**************** Modified for R2LIVE **********************/
 
