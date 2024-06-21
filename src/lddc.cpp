@@ -37,12 +37,6 @@
 #include "driver_node.h"
 #include "lds_lidar.h"
 
-/**************** Modified for R2LIVE **********************/
-double g_ros_init_start_time = -3e8;
-double init_lidar_tim = 3e10;
-double init_ros_time = 0;
-double skip_frame = 100;
-/**************** Modified for R2LIVE **********************/
 
 namespace livox_ros {
 
@@ -176,6 +170,7 @@ void Lddc::PrepareExit(void) {
     DRIVER_INFO(*cur_node_, "Save the bag file successfully!");
     bag_ = nullptr;
   }
+
   if (lds_) {
     lds_->PrepareExit();
     lds_ = nullptr;
@@ -283,10 +278,8 @@ void Lddc::InitPointcloud2Msg(const StoragePacket& pkg, PointCloud2& cloud, uint
   if (!pkg.points.empty()) {
     timestamp = pkg.base_time;
   }
-  // cloud.header.stamp = ros::Time(timestamp / 1e9);
-  /**************** Modified for R2LIVE **********************/
-  cloud.header.stamp = ros::Time((timestamp - init_lidar_tim)/1e9 + init_ros_time);
-  /**************** Modified for R2LIVE **********************/
+  
+  cloud.header.stamp = ros::Time( timestamp / 1000000000.0);
 
   std::vector<LivoxPointXyzrtlt> points;
   for (size_t i = 0; i < pkg.points_num; ++i) {
@@ -305,10 +298,15 @@ void Lddc::InitPointcloud2Msg(const StoragePacket& pkg, PointCloud2& cloud, uint
 }
 
 void Lddc::PublishPointcloud2Data(const uint8_t index, const uint64_t timestamp, const PointCloud2& cloud) {
+
   PublisherPtr publisher_ptr = Lddc::GetCurrentPublisher(index);
+
   if (kOutputToRos == output_type_) {
     publisher_ptr->publish(cloud);
   } else {
+    if (bag_ && enable_lidar_bag_) {
+      bag_->write(publisher_ptr->getTopic(), ros::Time(timestamp / 1000000000.0), cloud);
+    }
   }
 }
 
@@ -325,10 +323,7 @@ void Lddc::InitCustomMsg(CustomMsg& livox_msg, const StoragePacket& pkg, uint8_t
   }
   livox_msg.timebase = timestamp;
 
-  // livox_msg.header.stamp = ros::Time(timestamp / 1000000000.0);
-  /**************** Modified for R2LIVE **********************/
-  livox_msg.header.stamp = ros::Time((timestamp - init_lidar_tim)/1e9 + init_ros_time);
-  /**************** Modified for R2LIVE **********************/
+  livox_msg.header.stamp = ros::Time(timestamp / 1000000000.0);
 
   livox_msg.point_num = pkg.points_num;
   if (lds_->lidars_[index].lidar_type == kLivoxLidarType) {
@@ -434,33 +429,9 @@ void Lddc::PublishImuData(LidarImuDataQueue& imu_data_queue, const uint8_t index
 
   ImuMsg imu_msg;
   uint64_t timestamp;
-  
+  InitImuMsg(imu_data, imu_msg, timestamp);
 
   PublisherPtr publisher_ptr = GetCurrentImuPublisher(index);
-  /**************** Modified for R2LIVE **********************/
-  timestamp = imu_data.time_stamp;
-  if (skip_frame)
-  {
-    skip_frame--;
-    init_ros_time = ros::Time::now().toSec();
-    init_lidar_tim = timestamp;
-    g_ros_init_start_time = timestamp;
-    ROS_INFO("========================");
-    ROS_INFO("Init time stamp = %lf", g_ros_init_start_time);
-    ROS_INFO("========================");
-  }
-  
-  double g_val = 9.805;
-
-  imu_data.time_stamp = (timestamp - init_lidar_tim)/1e9 + init_ros_time;
-  imu_data.acc_x *= g_val;
-  imu_data.acc_y *= g_val;
-  imu_data.acc_z *= g_val;
-
-  InitImuMsg(imu_data, imu_msg, timestamp);
-  // imu_msg.header.stamp = ros::Time((timestamp - init_lidar_tim)/1e9 + init_ros_time);
-  
-    /**************** Modified for R2LIVE **********************/
 
   if (kOutputToRos == output_type_) {
     publisher_ptr->publish(imu_msg);
@@ -492,7 +463,7 @@ PublisherPtr Lddc::GetCurrentPublisher(uint8_t index) {
                ReplacePeriodByUnderline(ip_string).c_str());
       DRIVER_INFO(*cur_node_, "Support multi topics.");
     } else {
-      DRIVER_INFO(*cur_node_, "Support only one topic.");
+      DRIVER_INFO(*cur_nod[-0.230861, 0.341601, -0.0255827] e_, "Support only one topic.");
       snprintf(name_str, sizeof(name_str), "livox/lidar");
     }
 
@@ -563,5 +534,4 @@ void Lddc::CreateBagFile(const std::string &file_name) {
   }
 }
 
-}
-  // namespace livox_ros
+}  // namespace livox_ros
