@@ -37,7 +37,6 @@
 #include "driver_node.h"
 #include "lds_lidar.h"
 
-
 namespace livox_ros {
 
 /** Lidar Data Distribute Control--------------------------------------------*/
@@ -170,7 +169,6 @@ void Lddc::PrepareExit(void) {
     DRIVER_INFO(*cur_node_, "Save the bag file successfully!");
     bag_ = nullptr;
   }
-
   if (lds_) {
     lds_->PrepareExit();
     lds_ = nullptr;
@@ -298,15 +296,10 @@ void Lddc::InitPointcloud2Msg(const StoragePacket& pkg, PointCloud2& cloud, uint
 }
 
 void Lddc::PublishPointcloud2Data(const uint8_t index, const uint64_t timestamp, const PointCloud2& cloud) {
-
   PublisherPtr publisher_ptr = Lddc::GetCurrentPublisher(index);
-
   if (kOutputToRos == output_type_) {
     publisher_ptr->publish(cloud);
   } else {
-    if (bag_ && enable_lidar_bag_) {
-      bag_->write(publisher_ptr->getTopic(), ros::Time(timestamp / 1000000000.0), cloud);
-    }
   }
 }
 
@@ -463,7 +456,7 @@ PublisherPtr Lddc::GetCurrentPublisher(uint8_t index) {
                ReplacePeriodByUnderline(ip_string).c_str());
       DRIVER_INFO(*cur_node_, "Support multi topics.");
     } else {
-      DRIVER_INFO(*cur_nod[-0.230861, 0.341601, -0.0255827] e_, "Support only one topic.");
+      DRIVER_INFO(*cur_node_, "Support only one topic.");
       snprintf(name_str, sizeof(name_str), "livox/lidar");
     }
 
@@ -534,4 +527,5 @@ void Lddc::CreateBagFile(const std::string &file_name) {
   }
 }
 
-}  // namespace livox_ros
+}
+  // namespace livox_ros
