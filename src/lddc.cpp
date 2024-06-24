@@ -37,6 +37,13 @@
 #include "driver_node.h"
 #include "lds_lidar.h"
 
+/**************** Modified for R2LIVE **********************/
+double g_ros_init_start_time = -3e8;
+double init_lidar_tim = 3e10;
+double init_ros_time = 0;
+double skip_frame = 100;
+/**************** Modified for R2LIVE **********************/
+
 namespace livox_ros {
 
 /** Lidar Data Distribute Control--------------------------------------------*/
@@ -204,6 +211,7 @@ void Lddc::PublishCustomPointcloud(LidarDataQueue *queue, uint8_t index) {
     InitCustomMsg(livox_msg, pkg, index);
     FillPointsToCustomMsg(livox_msg, pkg);
     PublishCustomPointData(livox_msg, index);
+    
   }
 }
 
@@ -316,7 +324,10 @@ void Lddc::InitCustomMsg(CustomMsg& livox_msg, const StoragePacket& pkg, uint8_t
   }
   livox_msg.timebase = timestamp;
 
-  livox_msg.header.stamp = ros::Time(timestamp / 1000000000.0);
+  // livox_msg.header.stamp = ros::Time(timestamp / 1000000000.0);
+  /**************** Modified for R2LIVE **********************/
+  livox_msg.header.stamp = ros::Time((timestamp - init_lidar_tim)  / 1e9 + init_ros_time);
+  /**************** Modified for R2LIVE **********************/
 
   livox_msg.point_num = pkg.points_num;
   if (lds_->lidars_[index].lidar_type == kLivoxLidarType) {
@@ -422,9 +433,30 @@ void Lddc::PublishImuData(LidarImuDataQueue& imu_data_queue, const uint8_t index
 
   ImuMsg imu_msg;
   uint64_t timestamp;
-  InitImuMsg(imu_data, imu_msg, timestamp);
 
   PublisherPtr publisher_ptr = GetCurrentImuPublisher(index);
+  InitImuMsg(imu_data, imu_msg, timestamp);
+  /**************** Modified for R2LIVE **********************/
+  if(1)
+  {
+    if (skip_frame)
+    {
+      skip_frame--;
+      init_ros_time = ros::Time::now().toSec();
+      init_lidar_tim = timestamp;
+      g_ros_init_start_time = timestamp;
+      ROS_INFO("========================");
+      ROS_INFO("Init time stamp = %lf", g_ros_init_start_time);
+      ROS_INFO("========================");
+    }
+    
+    imu_msg.header.stamp = ros::Time((timestamp - init_lidar_tim) / 1e9 + init_ros_time);
+    double g_val = 9.805;
+    imu_msg.linear_acceleration.x *= g_val;
+    imu_msg.linear_acceleration.y *= g_val;
+    imu_msg.linear_acceleration.z *= g_val;
+  }
+  /**************** Modified for R2LIVE **********************/
 
   if (kOutputToRos == output_type_) {
     publisher_ptr->publish(imu_msg);
