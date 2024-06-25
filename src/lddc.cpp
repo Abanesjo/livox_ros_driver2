@@ -312,7 +312,8 @@ void Lddc::PublishPointcloud2Data(const uint8_t index, const uint64_t timestamp,
 }
 
 void Lddc::InitCustomMsg(CustomMsg& livox_msg, const StoragePacket& pkg, uint8_t index) {
-  livox_msg.header.frame_id.assign(frame_id_);
+  // livox_msg.header.frame_id.assign(frame_id_);
+  livox_msg.header.frame_id = "camera_init";
 
   static uint32_t msg_seq = 0;
   livox_msg.header.seq = msg_seq;
@@ -324,9 +325,9 @@ void Lddc::InitCustomMsg(CustomMsg& livox_msg, const StoragePacket& pkg, uint8_t
   }
   livox_msg.timebase = timestamp;
 
-  // livox_msg.header.stamp = ros::Time(timestamp / 1000000000.0);
+  livox_msg.header.stamp = ros::Time(timestamp / 1000000000.0);
   /**************** Modified for R2LIVE **********************/
-  livox_msg.header.stamp = ros::Time((timestamp - init_lidar_tim)  / 1e9 + init_ros_time);
+  // livox_msg.header.stamp = ros::Time((timestamp - init_lidar_tim)  / 1e9 + init_ros_time);
   /**************** Modified for R2LIVE **********************/
 
   livox_msg.point_num = pkg.points_num;
@@ -437,25 +438,25 @@ void Lddc::PublishImuData(LidarImuDataQueue& imu_data_queue, const uint8_t index
   PublisherPtr publisher_ptr = GetCurrentImuPublisher(index);
   InitImuMsg(imu_data, imu_msg, timestamp);
   /**************** Modified for R2LIVE **********************/
-  if(1)
-  {
-    if (skip_frame)
-    {
-      skip_frame--;
-      init_ros_time = ros::Time::now().toSec();
-      init_lidar_tim = timestamp;
-      g_ros_init_start_time = timestamp;
-      ROS_INFO("========================");
-      ROS_INFO("Init time stamp = %lf", g_ros_init_start_time);
-      ROS_INFO("========================");
-    }
+  // if(1)
+  // {
+    // if (skip_frame)
+    // {
+    //   skip_frame--;
+    //   init_ros_time = ros::Time::now().toSec();
+    //   init_lidar_tim = timestamp;
+    //   g_ros_init_start_time = timestamp;
+    //   ROS_INFO("========================");
+    //   ROS_INFO("Init time stamp = %lf", g_ros_init_start_time);
+    //   ROS_INFO("========================");
+    // }
     
-    imu_msg.header.stamp = ros::Time((timestamp - init_lidar_tim) / 1e9 + init_ros_time);
-    double g_val = 9.805;
-    imu_msg.linear_acceleration.x *= g_val;
-    imu_msg.linear_acceleration.y *= g_val;
-    imu_msg.linear_acceleration.z *= g_val;
-  }
+  //   imu_msg.header.stamp = ros::Time((timestamp - init_lidar_tim) / 1e9 + init_ros_time);
+  //   double g_val = 9.805;
+  //   imu_msg.linear_acceleration.x *= g_val;
+  //   imu_msg.linear_acceleration.y *= g_val;
+  //   imu_msg.linear_acceleration.z *= g_val;
+  // }
   /**************** Modified for R2LIVE **********************/
 
   if (kOutputToRos == output_type_) {
